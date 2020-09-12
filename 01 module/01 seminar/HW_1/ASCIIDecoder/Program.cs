@@ -7,8 +7,11 @@ namespace ASCIIDecoder
         public static void Main(string[] args)
         {
             string sa = Console.ReadLine();
-            int a = int.Parse(sa);
-            Console.WriteLine((char)a);
+            int a;
+            if (int.TryParse(sa, out a))
+                Console.WriteLine((char)a);
+            else
+                Console.WriteLine("Error");
         }
     }
 }

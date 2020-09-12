@@ -6,11 +6,18 @@ namespace Task05
     {
         public static void Main(string[] args)
         {
+            double a, b, c;
             Console.WriteLine("Enter cathetus 1 ");
-            double a = double.Parse(Console.ReadLine());
+            if (!double.TryParse(Console.ReadLine(), out a))
+            {
+                Console.WriteLine("Error");
+            }
             Console.WriteLine("Enter cathetus 2 ");
-            double b = double.Parse(Console.ReadLine());
-            double c = Math.Sqrt(a * a + b * b);
+            if (!double.TryParse(Console.ReadLine(), out b))
+            {
+                Console.WriteLine("Error");
+            }
+            c = Math.Sqrt(a * a + b * b);
             Console.WriteLine("Hypotenuse = " + c);
         }
     }
