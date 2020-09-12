@@ -37,3 +37,4 @@ namespace project1
         }
     }
 }
+//dz 3, 4, 6, 7, slaidi 13,14
