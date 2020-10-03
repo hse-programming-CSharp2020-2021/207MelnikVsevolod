@@ -16,13 +16,22 @@ namespace Task_4
             return a;
         }
 
+        static void Show(int[] a)
+        {
+            for (int i = 0; i < a.Length; ++i)
+            {
+                Console.Write($"[{i}] = {a[i]} ");
+                if (i % 5 == 4)
+                    Console.WriteLine("");
+            }
+        }
+
         static void Main(string[] args)
         {
             int a0 = int.Parse(Console.ReadLine());
             int[] x = new int[1];
             x = Gen(a0);
-            for (int i = 0; i < x.Length; ++i)
-                Console.WriteLine(x[i]);
+            Show(x);
         }
     }
 }
