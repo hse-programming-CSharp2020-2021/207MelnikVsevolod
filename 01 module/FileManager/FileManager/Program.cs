@@ -64,6 +64,7 @@ namespace FileManager
                 string is_ready = drive_info.IsReady ? "Да" : "Нет";
                 string total_memory = (drive_info.TotalSize / (1024.0 * 1024)).ToString("F3");
                 string memory_left = (drive_info.AvailableFreeSpace / (1024.0 * 1024)).ToString("F3");
+                //Text of information about disk.
                 string[] text = new string[5] { "Тип: " + drive_info.DriveType,
                                             "Файловая система: " + drive_info.DriveFormat,
                                             "Размер: " + total_memory + " Mбайт",
