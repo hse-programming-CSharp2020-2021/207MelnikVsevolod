@@ -65,7 +65,8 @@ namespace FileManager
                 string total_memory = (drive_info.TotalSize / (1024.0 * 1024)).ToString("F3");
                 string memory_left = (drive_info.AvailableFreeSpace / (1024.0 * 1024)).ToString("F3");
                 //Text of information about disk.
-                string[] text = new string[5] { "Тип: " + drive_info.DriveType,
+                string[] text = new string[6] {drive_info.VolumeLabel,
+                                            "Тип: " + drive_info.DriveType,
                                             "Файловая система: " + drive_info.DriveFormat,
                                             "Размер: " + total_memory + " Mбайт",
                                             "Памяти свободно: " + memory_left + " Mбайт",
@@ -101,7 +102,7 @@ namespace FileManager
                 if (dirs.Length + files.Length + 1 > 16)
                 {
                     Array.Resize(ref dirs, Math.Min(7, dirs.Length));
-                    Array.Resize(ref files, Math.Min(7, dirs.Length));
+                    Array.Resize(ref files, Math.Min(7, files.Length));
                 }
                 else
                 {
@@ -131,37 +132,28 @@ namespace FileManager
             for (int i = 0; i < dirs.Length; ++i)
             {
                 //Separating subdir name from path.
-                if (dirs[i] == null)
-                {
-                    text[i + 1] = "[?]";
-                }
+                string[] path_parts = dirs[i].Split(Path.DirectorySeparatorChar);
+                //Adding symbol of directory.
+                text[i + 1] = "▱ " + path_parts[path_parts.Length - 1];
+                //Adding symbols so list looks like tree.
+                if (i < dirs.Length - 1 || files.Length > 0 || is_short)
+                    text[i + 1] = tree_char + text[i + 1];
                 else
-                {
-                    string[] path_parts = dirs[i].Split(Path.DirectorySeparatorChar);
-                    text[i + 1] = "▱ " + path_parts[path_parts.Length - 1];
-                    if (i < dirs.Length - 1 || files.Length > 0)
-                        text[i + 1] = tree_char + text[i + 1];
-                    else
-                        text[i + 1] = last_char + text[i + 1];
-                }
+                    text[i + 1] = last_char + text[i + 1];
             }
             //Adding files to text for displaying in window.
             for (int i = 0; i < files.Length; ++i)
             {
-                if (files[i] == null)
-                {
-                    text[i + 1 + dirs.Length] = "[?]";
-                }
+                string[] path_parts = files[i].Split(Path.DirectorySeparatorChar);
+                //Adding symbol of file.
+                text[i + 1 + dirs.Length] = "◳ " + path_parts[path_parts.Length - 1];
+                //Adding symbols so list looks like tree.
+                if (i < files.Length - 1 || is_short)
+                    text[i + 1 + dirs.Length] = tree_char + text[i + 1 + dirs.Length];
                 else
-                {
-                    string[] path_parts = files[i].Split(Path.DirectorySeparatorChar);
-                    text[i + 1 + dirs.Length] = "◳ " + path_parts[path_parts.Length - 1];
-                    if (i < files.Length - 1)
-                        text[i + 1 + dirs.Length] = tree_char + text[i + 1 + dirs.Length];
-                    else
-                        text[i + 1 + dirs.Length] = last_char + text[i + 1 + dirs.Length];
-                }
+                    text[i + 1 + dirs.Length] = last_char + text[i + 1 + dirs.Length];
             }
+            //Indicating that there are more directories and files if it's true.
             if (is_short)
                 text[text.Length - 1] = "...";
             else
@@ -176,13 +168,13 @@ namespace FileManager
             try
             {
                 Directory.SetCurrentDirectory(path);
+                ListDir(out error, true);
             }
             catch
             {
                 error = true;
                 return;
             }
-            ListDir(out error, true);
         }
 
         //Copy file.
@@ -318,8 +310,15 @@ namespace FileManager
             {
                 bool error = false;
                 //Read user's command.
-                string[] command_args = Console.ReadLine().Split();
+                //Input.
+                string raw_str = Console.ReadLine();
+                //Arguments of the command (including it's name).
+                string[] command_args = raw_str.Split();
                 string command = command_args[0];
+                //Arguments without command name in one string.
+                string args2 = "";
+                if (raw_str.Length > command.Length + 1)
+                    args2 = raw_str.Substring(command.Length + 1);
                 Console.Clear();
                 color = ConsoleColor.Yellow;
                 switch (command)
@@ -351,7 +350,7 @@ namespace FileManager
                     case "cd":
                         if (command_args.Length >= 2)
                         {
-                            ChangeDir(command_args[1], out error);
+                            ChangeDir(args2, out error);
                             break;
                         } else
                         {
@@ -380,7 +379,7 @@ namespace FileManager
                     case "rm":
                         if (command_args.Length >= 2)
                         {
-                            DeleteFile(command_args[1], out error);
+                            DeleteFile(args2, out error);
                             break;
                         }
                         else
@@ -393,14 +392,10 @@ namespace FileManager
                             OpenFile(command_args[1], out error, true);
                             break;
                         }
-                        else if (command_args.Length == 2)
-                        {
-                            OpenFile(command_args[1], out error);
-                            break;
-                        }
                         else
                         {
-                            goto default;
+                            OpenFile(args2, out error);
+                            break;
                         }
                     case "write":
                         if (command_args.Length >= 3 && command_args[2] == "-e")
@@ -408,14 +403,10 @@ namespace FileManager
                             CreateFile(command_args[1], out error, true);
                             break;
                         }
-                        else if (command_args.Length == 2)
-                        {
-                            CreateFile(command_args[1], out error);
-                            break;
-                        }
                         else
                         {
-                            goto default;
+                            CreateFile(args2, out error);
+                            break;
                         }
                     case "cnct":
                         if (command_args.Length >= 2)
