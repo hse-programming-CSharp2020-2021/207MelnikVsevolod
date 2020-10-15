@@ -49,8 +49,9 @@ namespace FileManager
                 color = ConsoleColor.Green;
                 DrawWindow(text, path, false, max_width + 4);
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
                 error = true;
                 return;
             }
@@ -96,8 +97,9 @@ namespace FileManager
                 File.WriteAllLines(path, text);
                 OpenFile(path, out error, false, enc);
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
                 error = true;
                 return;
             }
@@ -129,8 +131,9 @@ namespace FileManager
                 color = ConsoleColor.DarkGreen;
                 DrawWindow(all_text, "Несколько файлов", false, max_width + 4);
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
                 error = true;
                 return;
             }

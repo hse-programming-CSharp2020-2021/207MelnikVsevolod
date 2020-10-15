@@ -9,20 +9,24 @@ namespace FileManager
 {
     partial class Program
     {
+        //Error message for displaying to user.
+        static string error_message = "";
+
         //Display help window.
         static void Help()
         {
             color = ConsoleColor.DarkCyan;
-            string[] text = new string[18] { "help - показать справку по командам",
+            string[] text = new string[19] { "help - показать справку по командам",
                                             "exit - выйти из программы",
                                             "disks - вывести список подключённых дисков",
                                             "disk_info - вывести информацию о текущем диске",
                                             "ls - просмотр файлов и папок текущей директории",
                                             "tree <x> - показать список файлов и папок в виде дерева с x уровнями",
                                             "cd <путь> - перейти в директорию <путь>",
+                                            "mkdir <путь> - создать папку",
                                             "cp <откуда> <куда> - копировать файл",
                                             "mv <откуда> <куда> - переместить файл",
-                                            "rm <путь> - удалить файл",
+                                            "rm <путь> - удалить файл или папку",
                                             "open <путь> - вывести содержимое файла",
                                             "open <путь> -e - выбрать кодировку и вывести содержимое файла",
                                             "write <путь> - создать файл и записать в него текст",
@@ -43,8 +47,9 @@ namespace FileManager
             {
                 drives = DriveInfo.GetDrives();
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
                 error = true;
                 return;
             }
@@ -74,8 +79,9 @@ namespace FileManager
                                             "Готов к использованию: " + is_ready};
                 DrawWindow(text, drive_info.Name, false);
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
                 error = true;
                 return;
             }
@@ -96,9 +102,9 @@ namespace FileManager
             Array.Resize(ref text, text.Length + subtree.Length);
             for (int i = 0; i < subtree.Length; ++i)
                 if (last_subtree)
-                    text[i + n] = "  " + subtree[i];
+                    text[i + n] = "   " + subtree[i];
                 else
-                    text[i + n] = "┃ " + subtree[i];
+                    text[i + n] = "┃  " + subtree[i];
         }
 
         //Get dirs and files. Returns 2 arrays of strings - names of dirs and files.
@@ -112,8 +118,9 @@ namespace FileManager
                 dirs = Directory.GetDirectories(cur_dir);
                 files = Directory.GetFiles(cur_dir);
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
                 error = true;
                 return;
             }
@@ -146,14 +153,14 @@ namespace FileManager
 
             string[] text = new string[0];
             //Chars for drawing tree.
-            string tree_char = "┠", last_char = "┗";
+            string tree_char = "┣", last_char = "┗";
             //Adding directories to text for displaying in window.
             for (int i = 0; i < dirs.Length; ++i)
             {
                 //Separating subdir name from path.
                 string[] path_parts = dirs[i].Split(Path.DirectorySeparatorChar);
                 //Format line.
-                string line = "▱ " + path_parts[path_parts.Length - 1];
+                string line = "━ " + path_parts[path_parts.Length - 1];
                 //Adding symbols so list looks like tree.
                 if (i < dirs.Length - 1 || files.Length > 0 || is_short)
                     line = tree_char + line;
@@ -171,7 +178,7 @@ namespace FileManager
             {
                 string[] path_parts = files[i].Split(Path.DirectorySeparatorChar);
                 //Format line.
-                string line = "◳ " + path_parts[path_parts.Length - 1];
+                string line = " " + path_parts[path_parts.Length - 1];
                 //Adding symbols so list looks like tree.
                 if (i < files.Length - 1 || is_short)
                     line = tree_char + line;
@@ -209,8 +216,26 @@ namespace FileManager
                 Directory.SetCurrentDirectory(path);
                 ListDir(out error, true);
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
+                error = true;
+                return;
+            }
+        }
+
+        //Create directory.
+        static void CreateDir(string path, out bool error)
+        {
+            error = false;
+            try
+            {
+                Directory.CreateDirectory(path);
+                ListDir(out error, true);
+            }
+            catch (Exception ex)
+            {
+                error_message = ex.Message;
                 error = true;
                 return;
             }
@@ -236,8 +261,9 @@ namespace FileManager
                     ListDir(out error, true);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
                 error = true;
                 return;
             }
@@ -263,31 +289,38 @@ namespace FileManager
                     ListDir(out error, true);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
                 error = true;
                 return;
             }
         }
 
-        //Delete file.
+        //Delete file or directory.
         static void DeleteFile(string path, out bool error)
         {
             error = false;
             try
             {
-                if (!File.Exists(path))
+                if (!File.Exists(path) && !Directory.Exists(path))
                 {
-                    Error("Такого файла не существует");
+                    Error("Такого файла/папки не существует");
                 }
-                else
+                else if (File.Exists(path))
                 {
                     File.Delete(path);
                     ListDir(out error, true);
                 }
+                else
+                {
+                    Directory.Delete(path);
+                    ListDir(out error, true);
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                error_message = ex.Message;
                 error = true;
                 return;
             }
@@ -306,7 +339,9 @@ namespace FileManager
         static void Error(string error_msg = "Произошла ошибка")
         {
             color = ConsoleColor.Red;
-            string[] text = new string[1] { error_msg };
+            if (error_message.Length + 5 > Console.WindowWidth)
+                error_message = error_message.Substring(0, Console.WindowWidth - 7) + "...";
+            string[] text = new string[2] { error_msg, error_message };
             DrawWindow(text, "Ошибка");
         }
 
@@ -341,6 +376,7 @@ namespace FileManager
         //Main method. Reading commands and executing them.
         static void Main(string[] args)
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
             bool exit = false;
             DrawWindow(new string[2] { "Добро пожаловать.",
                                         "Введите help для справки." },
@@ -348,6 +384,7 @@ namespace FileManager
             while (!exit)
             {
                 bool error = false;
+                error_message = "";
                 //Read user's command.
                 //Input.
                 string raw_str = Console.ReadLine();
@@ -392,6 +429,16 @@ namespace FileManager
                             ChangeDir(args2, out error);
                             break;
                         } else
+                        {
+                            goto default;
+                        }
+                    case "mkdir":
+                        if (command_args.Length >= 2)
+                        {
+                            CreateDir(args2, out error);
+                            break;
+                        }
+                        else
                         {
                             goto default;
                         }
