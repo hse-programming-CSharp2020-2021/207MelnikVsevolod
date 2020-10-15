@@ -66,8 +66,8 @@ namespace FileManager
         static void DrawWindow(string[] text, string window_name, bool center = true, int min_width = 50)
         {
             //Terminal sizes for drawing frame.
-            int width = Math.Max(min_width, Console.WindowWidth);
-            int height = Math.Max(text.Length + 4, Math.Max(20, Console.WindowHeight));
+            int width = Math.Max(min_width, Console.WindowWidth - 1);
+            int height = Math.Max(text.Length + 4, Math.Max(20, Console.WindowHeight - 1));
             DrawLine(width, true, $" [ {window_name} ] ");
             WriteLine(width, "", center);
             //WriteText

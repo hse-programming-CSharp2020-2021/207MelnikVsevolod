@@ -518,13 +518,16 @@ namespace FileManager
                         WrongInput();
                         break;
                 }
+                //If error occured in one of the methods.
                 if (error)
                 {
                     Console.Clear();
                     Error();
                 }
             }
-            DrawWindow(new string[2] { "До свидания!", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") }, "Выход" );
+            DrawWindow(new string[6] { "", "", "", "",
+                    "До свидания!",
+                    DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") }, "Выход" );
         }
     }
 }
