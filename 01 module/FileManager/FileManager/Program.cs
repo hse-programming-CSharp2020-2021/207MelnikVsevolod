@@ -13,11 +13,12 @@ namespace FileManager
         static void Help()
         {
             color = ConsoleColor.DarkCyan;
-            string[] text = new string[17] { "help - показать справку по командам",
+            string[] text = new string[18] { "help - показать справку по командам",
                                             "exit - выйти из программы",
                                             "disks - вывести список подключённых дисков",
                                             "disk_info - вывести информацию о текущем диске",
                                             "ls - просмотр файлов и папок текущей директории",
+                                            "tree <x> - показать список файлов и папок в виде дерева с x уровнями",
                                             "cd <путь> - перейти в директорию <путь>",
                                             "cp <откуда> <куда> - копировать файл",
                                             "mv <откуда> <куда> - переместить файл",
@@ -80,16 +81,36 @@ namespace FileManager
             }
         }
 
+        //Append string to string array.
+        static void Append(ref string[] text, string next_string)
+        {
+            Array.Resize(ref text, text.Length + 1);
+            text[text.Length - 1] = next_string;
+        }
+
+        //Add subtree.
+        //last_subtree needed for drawing branches of upper levels ot the tree.
+        static void AddSubtree(ref string[] text, string[] subtree, bool last_subtree)
+        {
+            int n = text.Length;
+            Array.Resize(ref text, text.Length + subtree.Length);
+            for (int i = 0; i < subtree.Length; ++i)
+                if (last_subtree)
+                    text[i + n] = "  " + subtree[i];
+                else
+                    text[i + n] = "┃ " + subtree[i];
+        }
+
         //Get dirs and files. Returns 2 arrays of strings - names of dirs and files.
-        static void GetDirs(ref bool is_short, out string[] dirs, out string[] files, out bool error)
+        static void GetDirs(string cur_dir, ref bool is_short, out string[] dirs, out string[] files, out bool error)
         {
             error = false;
             dirs = new string[0];
             files = new string[0];
             try
             {
-                dirs = Directory.GetDirectories(Directory.GetCurrentDirectory());
-                files = Directory.GetFiles(Directory.GetCurrentDirectory());
+                dirs = Directory.GetDirectories(cur_dir);
+                files = Directory.GetFiles(cur_dir);
             }
             catch
             {
@@ -112,20 +133,18 @@ namespace FileManager
             }
         }
 
-        //List directories and files in window.
-        //If is_short = true, not all files and dirs showed.
-        static void ListDir(out bool error, bool is_short = false)
+        //Get formated text of subtree.
+        static string[] GetSubtree(string cur_dir, out bool error, bool is_short = false, int level = 1)
         {
             error = false;
             //Getting directories and files.
             string[] dirs = new string[0];
             string[] files = new string[0];
-            GetDirs(ref is_short, out dirs, out files, out error);
+            GetDirs(cur_dir, ref is_short, out dirs, out files, out error);
             if (error)
-                return;
+                return new string[0];
 
-            string[] text = new string[dirs.Length + files.Length + 2];
-            text[0] = "▱ - папка, ◳ - файл";
+            string[] text = new string[0];
             //Chars for drawing tree.
             string tree_char = "┠", last_char = "┗";
             //Adding directories to text for displaying in window.
@@ -133,32 +152,52 @@ namespace FileManager
             {
                 //Separating subdir name from path.
                 string[] path_parts = dirs[i].Split(Path.DirectorySeparatorChar);
-                //Adding symbol of directory.
-                text[i + 1] = "▱ " + path_parts[path_parts.Length - 1];
+                //Format line.
+                string line = "▱ " + path_parts[path_parts.Length - 1];
                 //Adding symbols so list looks like tree.
                 if (i < dirs.Length - 1 || files.Length > 0 || is_short)
-                    text[i + 1] = tree_char + text[i + 1];
+                    line = tree_char + line;
                 else
-                    text[i + 1] = last_char + text[i + 1];
+                    line = last_char + line;
+                Append(ref text, line);
+                if (level > 1)
+                    if (i < dirs.Length - 1 || files.Length > 0)
+                        AddSubtree(ref text, GetSubtree(dirs[i], out error, is_short, level - 1), false);
+                    else
+                        AddSubtree(ref text, GetSubtree(dirs[i], out error, is_short, level - 1), true);
             }
             //Adding files to text for displaying in window.
             for (int i = 0; i < files.Length; ++i)
             {
                 string[] path_parts = files[i].Split(Path.DirectorySeparatorChar);
-                //Adding symbol of file.
-                text[i + 1 + dirs.Length] = "◳ " + path_parts[path_parts.Length - 1];
+                //Format line.
+                string line = "◳ " + path_parts[path_parts.Length - 1];
                 //Adding symbols so list looks like tree.
                 if (i < files.Length - 1 || is_short)
-                    text[i + 1 + dirs.Length] = tree_char + text[i + 1 + dirs.Length];
+                    line = tree_char + line;
                 else
-                    text[i + 1 + dirs.Length] = last_char + text[i + 1 + dirs.Length];
+                    line = last_char + line;
+                Append(ref text, line);
             }
             //Indicating that there are more directories and files if it's true.
             if (is_short)
-                text[text.Length - 1] = "...";
-            else
-                text[text.Length - 1] = "";
-            DrawWindow(text, "Текущяя дириктория", false);
+                Append(ref text, "...");
+            return text;
+        }
+
+        //List directories and files in window.
+        //If is_short = true, not all files and dirs showed.
+        static void ListDir(out bool error, bool is_short = false)
+        {
+            string[] text = GetSubtree(Directory.GetCurrentDirectory(), out error, is_short);
+            DrawWindow(text, "Текущая дириктория", false);
+        }
+
+        //Draw a tree with <levels> levels.
+        static void Tree(out bool error, int levels)
+        {
+            string[] text = GetSubtree(Directory.GetCurrentDirectory(), out error, false, levels);
+            DrawWindow(text, "Текущая дириктория", false);
         }
 
         //Change working directory.
@@ -274,8 +313,8 @@ namespace FileManager
         //Display current date and time.
         static void Time()
         {
-            string[] text = new string[2] { DateTime.Now.Date.ToString().Split()[0],
-                                            DateTime.Now.TimeOfDay.ToString()};
+            string[] text = new string[2] { DateTime.Now.ToString("dddd, dd MMMM yyyy"),
+                                            DateTime.Now.ToString("HH:mm:ss")};
             DrawWindow(text, "Текущее время");
         }
 
@@ -418,6 +457,16 @@ namespace FileManager
                         {
                             goto default;
                         }
+                    case "tree":
+                        int levels = 0;
+                        if (command_args.Length >= 2 && int.TryParse(command_args[1], out levels))
+                        {
+                            Tree(out error, levels);
+                            break;
+                        } else
+                        {
+                            goto default;
+                        }
                     default:
                         WrongInput();
                         break;
@@ -428,7 +477,7 @@ namespace FileManager
                     Error();
                 }
             }
-            Console.WriteLine("До свидания!");
+            DrawWindow(new string[2] { "До свидания!", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") }, "Выход" );
         }
     }
 }
