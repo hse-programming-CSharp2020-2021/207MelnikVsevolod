@@ -16,7 +16,7 @@ namespace FileManager
         static void Help()
         {
             color = ConsoleColor.DarkCyan;
-            string[] text = new string[19] { "help - показать справку по командам",
+            string[] text = new string[22] { "help - показать справку по командам",
                                             "exit - выйти из программы",
                                             "disks - вывести список подключённых дисков",
                                             "disk_info - вывести информацию о текущем диске",
@@ -27,12 +27,15 @@ namespace FileManager
                                             "cp <откуда> <куда> - копировать файл",
                                             "mv <откуда> <куда> - переместить файл",
                                             "rm <путь> - удалить файл или папку",
-                                            "open <путь> - вывести содержимое файла",
-                                            "open <путь> -e - выбрать кодировку и вывести содержимое файла",
+                                            "cat <путь> - вывести содержимое файла",
+                                            "cat <путь> -e - выбрать кодировку и вывести содержимое файла",
                                             "write <путь> - создать файл и записать в него текст",
                                             "write <путь> -e - выбрать кодировку и создать файл с текстом",
-                                            "cnct <путь1> <путь2>... - конкатинировать и вывести файлы",
+                                            "cnct <результат> <путь1> <путь2>... - конкатинировать файлы",
+                                            "                         и записать результат в <результат>",
                                             "time - показать текущее время",
+                                            "sh <команда> - (не безопасно) выполнить команду системы",
+                                            "         наберите :q чтобы завершить выполнение команды",
                                             "author - информация об авторе",
                                             "sign_up - войдите, чтобы получить ещё больше возможностей"};
             DrawWindow(text, "Справка по командам", false);
@@ -353,9 +356,91 @@ namespace FileManager
             DrawWindow(text, "Текущее время");
         }
 
+        //Reading process output.
+        static async void ReadProcess(System.Diagnostics.Process p, string cmd_name)
+        {
+            string[] output = new string[0];
+            int max_width = 60;
+            try
+            {
+                while (!p.HasExited)
+                {
+                    string line = await p.StandardOutput.ReadLineAsync();
+                    //Updating max length of the lines.
+                    if (line.Length > max_width)
+                        max_width = line.Length;
+                    Array.Resize(ref output, output.Length + 1);
+                    output[output.Length - 1] = line;
+                    Console.Clear();
+                    DrawWindow(output, p.ProcessName, false, max_width);
+                }
+                //Process had ended.
+                output = p.StandardOutput.ReadToEnd().Split(System.Environment.NewLine);
+                for (int i = 0; i < output.Length; ++i)
+                    if (output[i].Length > max_width)
+                        max_width = output[i].Length;
+                Console.Clear();
+                Array.Resize(ref output, output.Length + 1);
+                output[output.Length - 1] = "Выполнение завершено.";
+                DrawWindow(output, cmd_name, false, max_width);
+            }
+            catch
+            {
+                Console.Clear();
+                Array.Resize(ref output, output.Length + 1);
+                output[output.Length - 1] = "Выполнение завершено.";
+                DrawWindow(output, cmd_name, false, max_width);
+            }
+        }
+
+        //Execute command line script, kills it if key is pressed.
+        //This method is not secure.
+        static void Shell(string cmd, string args, out bool error)
+        {
+            error = false;
+            try
+            {
+                //Process settings.
+                System.Diagnostics.Process p = new System.Diagnostics.Process();
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.RedirectStandardInput = true;
+                p.StartInfo.RedirectStandardOutput = true;
+                //Name of the script.
+                p.StartInfo.FileName = cmd;
+                //Arguments of the script.
+                p.StartInfo.Arguments = args;
+                p.Start();
+
+                Console.Clear();
+                DrawWindow(new string[1] { $"Выполнение {cmd}..." }, cmd);
+
+                ReadProcess(p, cmd);
+                //Direct input from keyboard to started task.
+                //Kill task if :q has been writen.
+                while (true)
+                {
+                    if (p.HasExited)
+                        break;
+                    string line = Console.ReadLine();
+                    if (line == ":q" || p.HasExited)
+                        break;
+                    p.StandardInput.WriteLine(line);
+                }
+                p.Kill();
+                Console.WriteLine($"Выполнение {cmd} завершено");
+            }
+            catch (Exception ex)
+            {
+                error = true;
+                error_message = ex.Message;
+            }
+        }
+
+        //It's a trap.
         static void Author()
         {
             color = ConsoleColor.Red;
+            //Counting from 15 to 0.
             for (int i = 15; i >= 0; --i)
             {
                 Console.Clear();
@@ -373,18 +458,30 @@ namespace FileManager
             Author();
         }
 
+        //Greeting window.
+        static void Greet()
+        {
+            DrawWindow(new string[7] { "Добро пожаловать.",
+                                        "Введите help для справки.",
+                                        "",
+                                        "Если текст не помещается в окно - откройте его пошире.",
+                                        "Рекомендуется использовать терминал, не встроенный в IDE.",
+                                        "В Visual Studio for Mac снемите галочку в",
+                                        "Preferences -> Other -> Terminal -> Use integrated..."},
+                                        "File manager for terminal");
+        }
+
         //Main method. Reading commands and executing them.
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             bool exit = false;
-            DrawWindow(new string[2] { "Добро пожаловать.",
-                                        "Введите help для справки." },
-                                        "File manager for terminal");
+            Greet();
             while (!exit)
             {
                 bool error = false;
                 error_message = "";
+                Console.InputEncoding = System.Text.Encoding.UTF8;
                 //Read user's command.
                 //Input.
                 string raw_str = Console.ReadLine();
@@ -395,6 +492,7 @@ namespace FileManager
                 string args2 = "";
                 if (raw_str.Length > command.Length + 1)
                     args2 = raw_str.Substring(command.Length + 1);
+                Console.WriteLine("");
                 Console.Clear();
                 color = ConsoleColor.Yellow;
                 switch (command)
@@ -472,7 +570,7 @@ namespace FileManager
                         {
                             goto default;
                         }
-                    case "open":
+                    case "cat":
                         if (command_args.Length >= 3 && command_args[2] == "-e")
                         {
                             OpenFile(command_args[1], out error, true);
@@ -511,6 +609,20 @@ namespace FileManager
                             Tree(out error, levels);
                             break;
                         } else
+                        {
+                            goto default;
+                        }
+                    case "sh":
+                        if (command_args.Length >= 2)
+                        {
+                            //Arguments of the shell command.
+                            string args_of_script = "";
+                            for (int i = 2; i < command_args.Length; ++i)
+                                args_of_script += command_args[i] + " ";
+                            Shell(command_args[1], args_of_script, out error);
+                            break;
+                        }
+                        else
                         {
                             goto default;
                         }

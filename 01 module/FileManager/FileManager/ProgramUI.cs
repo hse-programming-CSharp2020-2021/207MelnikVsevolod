@@ -44,6 +44,7 @@ namespace FileManager
         static void WriteLine(int width, string text, bool center)
         {
             DrawChar('┃');
+            //Centering text.
             if (center)
             {
                 for (int i = 1; i < width / 2 - text.Length / 2; ++i)
@@ -54,6 +55,7 @@ namespace FileManager
             }
             else
             {
+                //Not centering text.
                 Console.Write(" " + text);
                 for (int i = text.Length + 2; i < width - 1; ++i)
                     Console.Write(' ');
@@ -63,9 +65,10 @@ namespace FileManager
         }
 
         //This method draws window with given text in terminal.
-        static void DrawWindow(string[] text, string window_name, bool center = true, int min_width = 50)
+        static void DrawWindow(string[] text, string window_name, bool center = true, int min_width = 60)
         {
             //Terminal sizes for drawing frame.
+            //-1, because in window's cmd we need to leave space for end of line symbol.
             int width = Math.Max(min_width, Console.WindowWidth - 1);
             int height = Math.Max(text.Length + 4, Math.Max(20, Console.WindowHeight - 1));
             DrawLine(width, true, $" [ {window_name} ] ");

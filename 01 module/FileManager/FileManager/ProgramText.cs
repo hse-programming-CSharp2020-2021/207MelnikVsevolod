@@ -68,7 +68,10 @@ namespace FileManager
             }
             System.Text.Encoding enc = System.Text.Encoding.UTF8;
             if (choose_enc)
+            {
                 enc = ChooseEncoding();
+                Console.InputEncoding = enc;
+            }
             try
             {
                 File.WriteAllText(path, "");
@@ -94,7 +97,7 @@ namespace FileManager
                         text[text.Length - 1] = line;
                     }
                 } while (line != ":q");
-                File.WriteAllLines(path, text);
+                File.WriteAllLines(path, text, enc);
                 OpenFile(path, out error, false, enc);
             }
             catch (Exception ex)
@@ -115,7 +118,7 @@ namespace FileManager
                 string[] all_text = new string[0];
                 //Iterator for all_text.
                 int j = 0;
-                for (int k = 1; k < args.Length; ++k)
+                for (int k = 2; k < args.Length; ++k)
                 {
                     //Text from one file.
                     string[] text = File.ReadAllLines(args[k]);
@@ -128,8 +131,10 @@ namespace FileManager
                             max_width = text[i].Length;
                     }
                 }
-                color = ConsoleColor.DarkGreen;
-                DrawWindow(all_text, "Несколько файлов", false, max_width + 4);
+                //Write concatenated text in file.
+                File.WriteAllLines(args[1], all_text);
+                //Show result.
+                OpenFile(args[1], out error);
             }
             catch (Exception ex)
             {
