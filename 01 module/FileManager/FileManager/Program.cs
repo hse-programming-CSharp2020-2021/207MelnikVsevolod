@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 
 
@@ -16,7 +16,7 @@ namespace FileManager
         static void Help()
         {
             color = ConsoleColor.DarkCyan;
-            string[] text = new string[22] { "help - показать справку по командам",
+            string[] text = new string[23] { "help - показать справку по командам",
                                             "exit - выйти из программы",
                                             "disks - вывести список подключённых дисков",
                                             "disk_info - вывести информацию о текущем диске",
@@ -36,6 +36,7 @@ namespace FileManager
                                             "time - показать текущее время",
                                             "sh <команда> - (не безопасно) выполнить команду системы",
                                             "         наберите :q чтобы завершить выполнение команды",
+                                            "       (например на Windows sh cmd запускает командную строку)",
                                             "author - информация об авторе",
                                             "sign_up - войдите, чтобы получить ещё больше возможностей"};
             DrawWindow(text, "Справка по командам", false);
@@ -94,6 +95,15 @@ namespace FileManager
         static void Append(ref string[] text, string next_string)
         {
             Array.Resize(ref text, text.Length + 1);
+            text[text.Length - 1] = next_string;
+        }
+
+        //Append string to string array.
+        static void CycleAppend(ref string[] text, string next_string)
+        {
+            for (int i = 0; i < text.Length - 1; ++i)
+                text[i] = text[i + 1];
+            text[0] = "...";
             text[text.Length - 1] = next_string;
         }
 
@@ -359,6 +369,8 @@ namespace FileManager
         //Reading process output.
         static async void ReadProcess(System.Diagnostics.Process p, string cmd_name)
         {
+            //Maximum for lines on the screen.
+            int buffer_size = 50;
             string[] output = new string[0];
             int max_width = 60;
             try
@@ -367,15 +379,22 @@ namespace FileManager
                 {
                     string line = await p.StandardOutput.ReadLineAsync();
                     //Updating max length of the lines.
-                    if (line.Length > max_width)
-                        max_width = line.Length;
-                    Array.Resize(ref output, output.Length + 1);
-                    output[output.Length - 1] = line;
+                    if (line != null)
+                    {
+                        if (line.Length > max_width)
+                            max_width = line.Length;
+                        if (output.Length < buffer_size)
+                            Append(ref output, line);
+                        else
+                            CycleAppend(ref output, line);
+                    }
                     Console.Clear();
                     DrawWindow(output, p.ProcessName, false, max_width);
                 }
                 //Process had ended.
-                output = p.StandardOutput.ReadToEnd().Split(System.Environment.NewLine);
+                string[] output2 = p.StandardOutput.ReadToEnd().Split(System.Environment.NewLine);
+                for (int i = 0; i < output2.Length; ++i)
+                    Append(ref output, output2[i]);
                 for (int i = 0; i < output.Length; ++i)
                     if (output[i].Length > max_width)
                         max_width = output[i].Length;
@@ -384,12 +403,13 @@ namespace FileManager
                 output[output.Length - 1] = "Выполнение завершено.";
                 DrawWindow(output, cmd_name, false, max_width);
             }
-            catch
+            catch (Exception ex)
             {
                 Console.Clear();
                 Array.Resize(ref output, output.Length + 1);
-                output[output.Length - 1] = "Выполнение завершено.";
+                output[output.Length - 1] = "Выполнение завершено. " + ex.Message;
                 DrawWindow(output, cmd_name, false, max_width);
+                p.Kill();
             }
         }
 
@@ -427,7 +447,7 @@ namespace FileManager
                     p.StandardInput.WriteLine(line);
                 }
                 p.Kill();
-                Console.WriteLine($"Выполнение {cmd} завершено");
+                Console.Write($"Выполнение {cmd} завершено");
             }
             catch (Exception ex)
             {
