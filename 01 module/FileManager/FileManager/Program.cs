@@ -688,21 +688,29 @@ namespace FileManager
         //Main method. Reading commands and executing them.
         static void Main(string[] args)
         {
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
-            bool exit = false;
-            Greet();
-            while (!exit)
+            try
             {
-                error_message = "";
-                Console.InputEncoding = System.Text.Encoding.UTF8;
-                //Read user's command.
-                //Input.
-                string raw_str = Console.ReadLine();
-                DoCommand(raw_str, out exit);
-            }
-            DrawWindow(new string[6] { "", "", "", "",
+                Console.OutputEncoding = System.Text.Encoding.UTF8;
+                bool exit = false;
+                Greet();
+                while (!exit)
+                {
+                    error_message = "";
+                    Console.InputEncoding = System.Text.Encoding.UTF8;
+                    //Read user's command.
+                    //Input.
+                    string raw_str = Console.ReadLine();
+                    DoCommand(raw_str, out exit);
+                }
+                DrawWindow(new string[6] { "", "", "", "",
                     "До свидания!",
-                    DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") }, "Выход" );
+                    DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") }, "Выход");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("File Manager завершил работу из-за ошибки:");
+                Console.WriteLine(ex.Message);
+            }
         }
     }
 }
