@@ -98,7 +98,7 @@ namespace FileManager
             text[text.Length - 1] = next_string;
         }
 
-        //Append string to string array.
+        //Append string to string array, cycling it so it doesn't change size.
         static void CycleAppend(ref string[] text, string next_string)
         {
             for (int i = 0; i < text.Length - 1; ++i)
@@ -366,13 +366,41 @@ namespace FileManager
             DrawWindow(text, "Текущее время");
         }
 
+        //Render output of started process every <delay> milliseconds.
+        static async void Render(System.Diagnostics.Process p, string cmd_name)
+        {
+            int delay = 500;
+            while (!p.HasExited)
+            {
+                if (!is_rendered)
+                {
+                    await System.Threading.Tasks.Task.Delay(delay);
+                    Console.Clear();
+                    DrawWindow(output, cmd_name, false);
+                    is_rendered = true;
+                }
+            }
+            Console.Clear();
+            Array.Resize(ref output, output.Length + 1);
+            output[output.Length - 1] = "Выполнение завершено.";
+            DrawWindow(output, cmd_name, false, max_width);
+        }
+
+        //Output of the process.
+        static string[] output;
+        //Was all output displayed to user.
+        static bool is_rendered;
+        //Max length of output lines.
+        static int max_width;
+
         //Reading process output.
         static async void ReadProcess(System.Diagnostics.Process p, string cmd_name)
         {
             //Maximum for lines on the screen.
-            int buffer_size = 50;
-            string[] output = new string[0];
-            int max_width = 60;
+            int buffer_size = 100;
+            is_rendered = false;
+            output = new string[0];
+            max_width = 60;
             try
             {
                 while (!p.HasExited)
@@ -387,28 +415,23 @@ namespace FileManager
                             Append(ref output, line);
                         else
                             CycleAppend(ref output, line);
+                        is_rendered = false;
                     }
-                    Console.Clear();
-                    DrawWindow(output, p.ProcessName, false, max_width);
+                    //Console.Clear();
+                    //DrawWindow(output, p.ProcessName, false, max_width);
                 }
                 //Process had ended.
+                //Adding all remaining lines to output text.
                 string[] output2 = p.StandardOutput.ReadToEnd().Split(System.Environment.NewLine);
                 for (int i = 0; i < output2.Length; ++i)
                     Append(ref output, output2[i]);
                 for (int i = 0; i < output.Length; ++i)
                     if (output[i].Length > max_width)
                         max_width = output[i].Length;
-                Console.Clear();
-                Array.Resize(ref output, output.Length + 1);
-                output[output.Length - 1] = "Выполнение завершено.";
-                DrawWindow(output, cmd_name, false, max_width);
             }
             catch (Exception ex)
             {
-                Console.Clear();
-                Array.Resize(ref output, output.Length + 1);
-                output[output.Length - 1] = "Выполнение завершено. " + ex.Message;
-                DrawWindow(output, cmd_name, false, max_width);
+                Append(ref output, "Ошибка " + ex.Message);
                 p.Kill();
             }
         }
@@ -435,6 +458,7 @@ namespace FileManager
                 DrawWindow(new string[1] { $"Выполнение {cmd}..." }, cmd);
 
                 ReadProcess(p, cmd);
+                Render(p, cmd);
                 //Direct input from keyboard to started task.
                 //Kill task if :q has been writen.
                 while (true)
@@ -442,12 +466,19 @@ namespace FileManager
                     if (p.HasExited)
                         break;
                     string line = Console.ReadLine();
-                    if (line == ":q" || p.HasExited)
+                    if (line == ":q")
                         break;
+                    if (p.HasExited)
+                    {
+                        bool exit;
+                        //Next command should be executed in file manager,
+                        //since task has ended.
+                        DoCommand(line, out exit);
+                        break;
+                    }
                     p.StandardInput.WriteLine(line);
                 }
                 p.Kill();
-                Console.Write($"Выполнение {cmd} завершено");
             }
             catch (Exception ex)
             {
@@ -464,7 +495,7 @@ namespace FileManager
             for (int i = 15; i >= 0; --i)
             {
                 Console.Clear();
-                DrawWindow(new string[3] { "Разанонимизация запрещена", "правилами", $"вы будете ОТЧИСЛЕНЫ через: {i}" }, "!!!!!!!!!");
+                DrawWindow(new string[2] { "Разанонимизация запрещена!", $"Вы будете ОТЧИСЛЕНЫ через: {i}" }, "!!!!!!!!!");
                 System.Threading.Thread.Sleep(1000);
             }
             Console.Clear();
@@ -491,6 +522,169 @@ namespace FileManager
                                         "File manager for terminal");
         }
 
+        //Executes command.
+        //Exit = true if user wants to exit.
+        static void DoCommand(string raw_str, out bool exit)
+        {
+            bool error = false;
+            exit = false;
+            if (raw_str == null)
+                return;
+            //Arguments of the command (including it's name).
+            string[] command_args = raw_str.Split();
+            string command = command_args[0];
+            //Arguments without command name in one string.
+            string args2 = "";
+            if (raw_str.Length > command.Length + 1)
+                args2 = raw_str.Substring(command.Length + 1);
+            Console.WriteLine("");
+            Console.Clear();
+            color = ConsoleColor.Yellow;
+            switch (command)
+            {
+                case "help":
+                    Help();
+                    break;
+                case "exit":
+                    exit = true;
+                    break;
+                case "disks":
+                    GetDisks(out error);
+                    break;
+                case "disk_info":
+                    DiskInfo(out error);
+                    break;
+                case "ls":
+                    ListDir(out error);
+                    break;
+                case "time":
+                    Time();
+                    break;
+                case "author":
+                    Author();
+                    break;
+                case "sign_up":
+                    SignUp();
+                    break;
+                case "cd":
+                    if (command_args.Length >= 2)
+                    {
+                        ChangeDir(args2, out error);
+                        break;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                case "mkdir":
+                    if (command_args.Length >= 2)
+                    {
+                        CreateDir(args2, out error);
+                        break;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                case "cp":
+                    if (command_args.Length >= 3)
+                    {
+                        CopyFile(command_args[1], command_args[2], out error);
+                        break;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                case "mv":
+                    if (command_args.Length >= 3)
+                    {
+                        MoveFile(command_args[1], command_args[2], out error);
+                        break;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                case "rm":
+                    if (command_args.Length >= 2)
+                    {
+                        DeleteFile(args2, out error);
+                        break;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                case "cat":
+                    if (command_args.Length >= 3 && command_args[2] == "-e")
+                    {
+                        OpenFile(command_args[1], out error, true);
+                        break;
+                    }
+                    else
+                    {
+                        OpenFile(args2, out error);
+                        break;
+                    }
+                case "write":
+                    if (command_args.Length >= 3 && command_args[2] == "-e")
+                    {
+                        CreateFile(command_args[1], out error, true);
+                        break;
+                    }
+                    else
+                    {
+                        CreateFile(args2, out error);
+                        break;
+                    }
+                case "cnct":
+                    if (command_args.Length >= 2)
+                    {
+                        Concatenate(command_args, out error);
+                        break;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                case "tree":
+                    int levels = 0;
+                    if (command_args.Length >= 2 && int.TryParse(command_args[1], out levels))
+                    {
+                        Tree(out error, levels);
+                        break;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                case "sh":
+                    if (command_args.Length >= 2)
+                    {
+                        //Arguments of the shell command.
+                        string args_of_script = "";
+                        for (int i = 2; i < command_args.Length; ++i)
+                            args_of_script += command_args[i] + " ";
+                        Shell(command_args[1], args_of_script, out error);
+                        break;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                default:
+                    WrongInput();
+                    break;
+            }
+            //If error occured in one of the methods.
+            if (error)
+            {
+                Console.Clear();
+                Error();
+            }
+        }
+
         //Main method. Reading commands and executing them.
         static void Main(string[] args)
         {
@@ -499,163 +693,12 @@ namespace FileManager
             Greet();
             while (!exit)
             {
-                bool error = false;
                 error_message = "";
                 Console.InputEncoding = System.Text.Encoding.UTF8;
                 //Read user's command.
                 //Input.
                 string raw_str = Console.ReadLine();
-                //Arguments of the command (including it's name).
-                string[] command_args = raw_str.Split();
-                string command = command_args[0];
-                //Arguments without command name in one string.
-                string args2 = "";
-                if (raw_str.Length > command.Length + 1)
-                    args2 = raw_str.Substring(command.Length + 1);
-                Console.WriteLine("");
-                Console.Clear();
-                color = ConsoleColor.Yellow;
-                switch (command)
-                {
-                    case "help":
-                        Help();
-                        break;
-                    case "exit":
-                        exit = true;
-                        break;
-                    case "disks":
-                        GetDisks(out error);
-                        break;
-                    case "disk_info":
-                        DiskInfo(out error);
-                        break;
-                    case "ls":
-                        ListDir(out error);
-                        break;
-                    case "time":
-                        Time();
-                        break;
-                    case "author":
-                        Author();
-                        break;
-                    case "sign_up":
-                        SignUp();
-                        break;
-                    case "cd":
-                        if (command_args.Length >= 2)
-                        {
-                            ChangeDir(args2, out error);
-                            break;
-                        } else
-                        {
-                            goto default;
-                        }
-                    case "mkdir":
-                        if (command_args.Length >= 2)
-                        {
-                            CreateDir(args2, out error);
-                            break;
-                        }
-                        else
-                        {
-                            goto default;
-                        }
-                    case "cp":
-                        if (command_args.Length >= 3)
-                        {
-                            CopyFile(command_args[1], command_args[2], out error);
-                            break;
-                        }
-                        else
-                        {
-                            goto default;
-                        }
-                    case "mv":
-                        if (command_args.Length >= 3)
-                        {
-                            MoveFile(command_args[1], command_args[2], out error);
-                            break;
-                        }
-                        else
-                        {
-                            goto default;
-                        }
-                    case "rm":
-                        if (command_args.Length >= 2)
-                        {
-                            DeleteFile(args2, out error);
-                            break;
-                        }
-                        else
-                        {
-                            goto default;
-                        }
-                    case "cat":
-                        if (command_args.Length >= 3 && command_args[2] == "-e")
-                        {
-                            OpenFile(command_args[1], out error, true);
-                            break;
-                        }
-                        else
-                        {
-                            OpenFile(args2, out error);
-                            break;
-                        }
-                    case "write":
-                        if (command_args.Length >= 3 && command_args[2] == "-e")
-                        {
-                            CreateFile(command_args[1], out error, true);
-                            break;
-                        }
-                        else
-                        {
-                            CreateFile(args2, out error);
-                            break;
-                        }
-                    case "cnct":
-                        if (command_args.Length >= 2)
-                        {
-                            Concatenate(command_args, out error);
-                            break;
-                        }
-                        else
-                        {
-                            goto default;
-                        }
-                    case "tree":
-                        int levels = 0;
-                        if (command_args.Length >= 2 && int.TryParse(command_args[1], out levels))
-                        {
-                            Tree(out error, levels);
-                            break;
-                        } else
-                        {
-                            goto default;
-                        }
-                    case "sh":
-                        if (command_args.Length >= 2)
-                        {
-                            //Arguments of the shell command.
-                            string args_of_script = "";
-                            for (int i = 2; i < command_args.Length; ++i)
-                                args_of_script += command_args[i] + " ";
-                            Shell(command_args[1], args_of_script, out error);
-                            break;
-                        }
-                        else
-                        {
-                            goto default;
-                        }
-                    default:
-                        WrongInput();
-                        break;
-                }
-                //If error occured in one of the methods.
-                if (error)
-                {
-                    Console.Clear();
-                    Error();
-                }
+                DoCommand(raw_str, out exit);
             }
             DrawWindow(new string[6] { "", "", "", "",
                     "До свидания!",
