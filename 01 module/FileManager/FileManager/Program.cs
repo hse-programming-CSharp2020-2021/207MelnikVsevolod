@@ -16,7 +16,7 @@ namespace FileManager
         static void Help()
         {
             color = ConsoleColor.DarkCyan;
-            string[] text = new string[23] { "help - показать справку по командам",
+            string[] text = new string[21] { "help - показать справку по командам",
                                             "exit - выйти из программы",
                                             "disks - вывести список подключённых дисков",
                                             "disk_info - вывести информацию о текущем диске",
@@ -36,9 +36,7 @@ namespace FileManager
                                             "time - показать текущее время",
                                             "sh <команда> - (не безопасно) выполнить команду системы",
                                             "         наберите :q чтобы завершить выполнение команды",
-                                            "       (например на Windows sh cmd запускает командную строку)",
-                                            "author - информация об авторе",
-                                            "sign_up - войдите, чтобы получить ещё больше возможностей"};
+                                            "author - информация об авторе"};
             DrawWindow(text, "Справка по командам", false);
         }
 
@@ -262,6 +260,7 @@ namespace FileManager
             {
                 if (!File.Exists(from))
                 {
+                    //Can't copy file that doesn't exist.
                     Error("Такого файла не существует");
                 }
                 else if (File.Exists(to))
@@ -290,6 +289,7 @@ namespace FileManager
             {
                 if (!File.Exists(from))
                 {
+                    //Can't move file that doesn't exists.
                     Error("Такого файла не существует");
                 }
                 else if (File.Exists(to))
@@ -366,10 +366,14 @@ namespace FileManager
             DrawWindow(text, "Текущее время");
         }
 
+
+        //I hope i've done multithreading part ok, all i know
+        //about it is from documentation and stackoverflow.
+
         //Render output of started process every <delay> milliseconds.
         static async void Render(System.Diagnostics.Process p, string cmd_name)
         {
-            int delay = 500;
+            int delay = 41;
             while (!p.HasExited)
             {
                 if (!is_rendered)
@@ -487,38 +491,20 @@ namespace FileManager
             }
         }
 
-        //It's a trap.
         static void Author()
         {
-            color = ConsoleColor.Red;
-            //Counting from 15 to 0.
-            for (int i = 15; i >= 0; --i)
-            {
-                Console.Clear();
-                DrawWindow(new string[2] { "Разанонимизация запрещена!", $"Вы будете ОТЧИСЛЕНЫ через: {i}" }, "!!!!!!!!!");
-                System.Threading.Thread.Sleep(1000);
-            }
-            Console.Clear();
-            DrawWindow(new string[2] { "Ошибка доступа к LMS.", "Отчисление отменено." }, "!!!!!!!!!");
-        }
-
-        static void SignUp()
-        {
-            DrawWindow(new string[1] { "Введите ФИО" }, "Регистрация");
-            Console.ReadLine();
-            Author();
+            color = ConsoleColor.White;
+            DrawWindow(new string[1] { "Мельник Всеволод 2020" }, "Автор");
         }
 
         //Greeting window.
         static void Greet()
         {
-            DrawWindow(new string[7] { "Добро пожаловать.",
+            DrawWindow(new string[5] { "Добро пожаловать, " + System.Environment.UserName,
                                         "Введите help для справки.",
                                         "",
-                                        "Если текст не помещается в окно - откройте его пошире.",
-                                        "Рекомендуется использовать терминал, не встроенный в IDE.",
-                                        "В Visual Studio for Mac снемите галочку в",
-                                        "Preferences -> Other -> Terminal -> Use integrated..."},
+                                        DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"),
+                                        System.Environment.MachineName},
                                         "File manager for terminal");
         }
 
@@ -562,9 +548,6 @@ namespace FileManager
                     break;
                 case "author":
                     Author();
-                    break;
-                case "sign_up":
-                    SignUp();
                     break;
                 case "cd":
                     if (command_args.Length >= 2)
@@ -690,6 +673,7 @@ namespace FileManager
         {
             try
             {
+                //Set encoding so window looks ok.
                 Console.OutputEncoding = System.Text.Encoding.UTF8;
                 bool exit = false;
                 Greet();

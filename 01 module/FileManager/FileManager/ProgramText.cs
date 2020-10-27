@@ -17,6 +17,8 @@ namespace FileManager
                 DrawWindow(new string[4] { "Выберите кодировку:", "UTF8", "Unicode", "ASCII" }, "Кодировка");
                 string users_enc = Console.ReadLine();
                 user_cant_choose = false;
+
+                //Change encoding.
                 if (users_enc == "UTF8")
                     enc = System.Text.Encoding.UTF8;
                 else if (users_enc == "Unicode")
