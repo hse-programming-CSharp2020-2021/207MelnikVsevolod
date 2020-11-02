@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 
+// All operations are done with matrixed, stored in memory.
 namespace MatrixCalc
 {
     partial class Program
@@ -231,11 +232,17 @@ namespace MatrixCalc
             }
         }
 
+        /// <summary>
+        /// Execute command that requires calculating matrixes.
+        /// </summary>
+        /// <param name="args"> Arguments of the command. </param>
+        /// <param name="error"> Error. </param>
         static void Calc(string[] args, out bool error)
         {
             error = false;
             // Index of the result matrix.
             int result_index = 0;
+            // Create new matrix if needed.
             if (args[0] == "new")
             {
                 StoreMatrix(new Matrix());
@@ -248,6 +255,7 @@ namespace MatrixCalc
                 return;
             }
             int m1, m2;
+            // Copy matrix if asked.
             if (args.Length == 3 && int.TryParse(args[2], out m1) && m1 >= 0 && m1 < memory.Length)
             {
                 memory[result_index] = new Matrix(memory[m1]);
@@ -321,7 +329,7 @@ namespace MatrixCalc
                         error_message = "Неверная команда.";
                         break;
                 }
-            // New matrix is unused.
+            // New matrix is unused because of an error.
             if (args[0] == "new" && error)
                 DeleteLastMatrix();
         }
@@ -462,6 +470,10 @@ namespace MatrixCalc
             Console.Clear();
         }
 
+        /// <summary>
+        /// Main entry point.
+        /// </summary>
+        /// <param name="args"> Not used. </param>
         static void Main(string[] args)
         {
             rnd = new Random();

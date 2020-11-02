@@ -60,7 +60,7 @@ namespace MatrixCalc
         {
             for (int j = 0; j < x.Length; ++j)
             {
-                Console.Write($"X{j} = ");
+                Console.Write($"X{j + 1} = ");
                 if (is_defined[j])
                     Console.WriteLine(x[j]);
                 else if (any_number[j])
@@ -118,7 +118,7 @@ namespace MatrixCalc
                     if (is_defined[j])
                         x[first_elem] += -m2[i, j] * x[j];
                     else if (m2[i, j] != 0)
-                        formulas[first_elem] += $" -X{j} * {m2[i, j]}";
+                        formulas[first_elem] += $" - X{j + 1} * {m2[i, j]}";
                     if (m2[i, j] != 0 && !is_defined[j])
                         def = false;
                 }

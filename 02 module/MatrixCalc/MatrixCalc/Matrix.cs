@@ -352,14 +352,18 @@ namespace MatrixCalc
                 }
 
                 // 2.
+                bool swaped = false;
                 for (int k = i + 1; k < n; ++k)
                 {
                     if (!EqZero(k, j))
                     {
                         Swap(i, k);
-                        continue;
+                        swaped = true;
+                        break;
                     }
                 }
+                if (swaped)
+                    continue;
 
                 // 3.
                 if (j == m - 1)
