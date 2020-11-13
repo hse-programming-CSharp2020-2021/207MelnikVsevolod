@@ -86,6 +86,21 @@ namespace VegetableWarehouse
             return false;
         }
 
+        public Box[] Search(string id)
+        {
+            Box[] found_boxes = new Box[0];
+            for (int i = 0; i < containers.Length; ++i)
+            {
+                Box[] boxes_in_container = containers[i].Search(id);
+                for (int j = 0; j < boxes_in_container.Length; ++j)
+                {
+                    Array.Resize(ref found_boxes, found_boxes.Length + 1);
+                    found_boxes[found_boxes.Length - 1] = boxes_in_container[j];
+                }
+            }
+            return found_boxes;
+        }
+
         /// <summary>
         /// Get info about the warehouse.
         /// </summary>

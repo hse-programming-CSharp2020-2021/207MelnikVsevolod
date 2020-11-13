@@ -9,7 +9,10 @@ namespace VegetableWarehouse
         /// <summary>
         /// Id of the box.
         /// </summary>
-        string id;
+        public string ID
+        {
+            get; private set;
+        }
 
         /// <summary>
         /// Mass of the vegetables.
@@ -31,14 +34,14 @@ namespace VegetableWarehouse
         public Box()
         {
             Mass = Price = 0;
-            id = "Неизвестные овощи 1";
+            ID = "Неизвестные овощи 1";
         }
 
         public Box(string id, double mass, double price)
         {
             Mass = mass;
             Price = price;
-            this.id = id;
+            this.ID = id;
         }
 
         /// <summary>
@@ -48,7 +51,7 @@ namespace VegetableWarehouse
         public string[] Info()
         {
             string[] info = new string[3] {
-                id,
+                ID,
                 " Масса овощей: " + Mass.ToString("F3") + "кг",
                 " Цена за килограмм: " + Price.ToString("F2") + "₽/кг" };
             return info;

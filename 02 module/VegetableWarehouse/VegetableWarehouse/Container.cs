@@ -81,6 +81,25 @@ namespace VegetableWarehouse
         }
 
         /// <summary>
+        /// Find all boxes with given id.
+        /// </summary>
+        /// <param name="id"> Id of needed box. </param>
+        /// <returns> Boxes with given id. </returns>
+        public Box[] Search(string id)
+        {
+            Box[] found_boxes = new Box[0];
+            for (int i = 0; i < boxes.Length; ++i)
+            {
+                if (boxes[i].ID.ToLower() == id.ToLower())
+                {
+                    Array.Resize(ref found_boxes, found_boxes.Length + 1);
+                    found_boxes[found_boxes.Length - 1] = boxes[i];
+                }
+            }
+            return found_boxes;
+        }
+
+        /// <summary>
         /// Damage the container, that results in reduced price for each box.
         /// </summary>
         /// <param name="damage_coef"> Coefficient of the damage dealt. </param>

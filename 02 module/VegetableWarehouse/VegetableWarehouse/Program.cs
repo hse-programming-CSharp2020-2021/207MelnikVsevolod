@@ -210,9 +210,33 @@ namespace VegetableWarehouse
             Console.WriteLine("  delete <id> - удалить контейнер под номером <id>.");
             Console.WriteLine("  balance - вывести баланс счёта.");
             Console.WriteLine("  info - вывести информацию о складе и хранимых контейнерах.");
+            Console.WriteLine("  search - поиск ящиков.");
             Console.WriteLine("  load - загрузить данные о новом складе из файлов.");
             Console.WriteLine("  export - вывести информацию о складе и хранимых контейнерах в файл.");
             Console.WriteLine("  exit - выйти из программы.");
+        }
+
+        /// <summary>
+        /// Search for boxes.
+        /// </summary>
+        static void Search()
+        {
+            Console.WriteLine("Введите наименование ящика, которого хотите найти.");
+            string id = ReadLine();
+            Box[] found_boxes = wh.Search(id);
+            if (found_boxes.Length == 0)
+                Console.WriteLine("Ящиков с таким наименованием не найдено.");
+            else
+            {
+                Console.WriteLine("Найденные ящики:");
+                Console.WriteLine("");
+                for (int i = 0; i < found_boxes.Length; ++i)
+                {
+                    string[] info = found_boxes[i].Info();
+                    for (int j = 0; j < info.Length; ++j)
+                        Console.WriteLine(info[j]);
+                }
+            }
         }
 
         /// <summary>
@@ -282,6 +306,9 @@ namespace VegetableWarehouse
                 case "info":
                     DisplayInfo();
                     break;
+                case "search":
+                    Search();
+                    break;
                 case "load":
                     LoadFromFiles();
                     break;
@@ -298,13 +325,13 @@ namespace VegetableWarehouse
         }
 
         /// <summary>
-        /// Main entry point.
+        /// Set up application's settings and create warehouse.
         /// </summary>
-        /// <param name="args"></param>
-        static void Main(string[] args)
+        static void Setup()
         {
             wh = new Warehouse();
             Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.ForegroundColor = ConsoleColor.White;
             Greet();
             Console.WriteLine("Хотите загрузить склад из файлов? Напишите yes, если да.");
             string answer = ReadLine();
@@ -321,6 +348,15 @@ namespace VegetableWarehouse
             }
             else
                 CreateWarehouse();
+        }
+
+        /// <summary>
+        /// Main entry point.
+        /// </summary>
+        /// <param name="args"></param>
+        static void Main(string[] args)
+        {
+            Setup();
             Help();
             bool exit = false;
             while (!exit)
@@ -337,7 +373,7 @@ namespace VegetableWarehouse
                 {
                     Error("Ошибка: " + ex.Message);
                 }
-                if (rnd.Next(5) == 0)
+                if (rnd.Next(10) == 0)
                     PayMafia();
             }
             Console.WriteLine("До свидания.");

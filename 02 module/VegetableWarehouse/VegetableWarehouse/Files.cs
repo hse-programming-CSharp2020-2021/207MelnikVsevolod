@@ -101,9 +101,10 @@ namespace VegetableWarehouse
         }
 
         /// <summary>
-        /// Load warehouse from files.
+        /// Display manual for working with files.
+        /// Explain files format.
         /// </summary>
-        static void LoadFromFiles()
+        static void FilesManual()
         {
             Console.WriteLine("Описание склада состоит из 3 файлов:");
             Console.WriteLine("1) Описание склада.");
@@ -120,6 +121,14 @@ namespace VegetableWarehouse
             Console.WriteLine("Каждый ящик - наименование ящика, масса и цена за кг.");
             Console.WriteLine("Все данные в строке разделяются пробелами.");
             Console.WriteLine("");
+        }
+
+        /// <summary>
+        /// Load warehouse from files.
+        /// </summary>
+        static void LoadFromFiles()
+        {
+            FilesManual();
             Console.Write("Введите путь до файла с описанием склада: ");
             string wh_path = ReadLine();
             Console.Write("Введите путь до файла с описанием команд: ");
