@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Xml.Serialization;
 
 namespace Project
 {
     /// <summary>
     /// Project class.
     /// </summary>
+    [Serializable, XmlInclude(typeof(Task)), XmlInclude(typeof(Epic)),
+        XmlInclude(typeof(Story)), XmlInclude(typeof(Bug)), XmlInclude(typeof(User))]
     public class Project
     {
         public string Name { get; set; }
@@ -16,6 +19,12 @@ namespace Project
         public Project(string name)
         {
             Name = name;
+        }
+
+
+        public Project()
+        {
+            Name = "new_project";
         }
     }
 }
