@@ -34,7 +34,8 @@ namespace Project
             NewWindow("О программе", new string[] { "'Q' - назад"});
             Console.WriteLine("Добро пожаловать!");
             Console.WriteLine("Реализован весь функционал (включая дополнительный)");
-            Console.WriteLine("");
+            Console.WriteLine("Список исполнителей не отображается в списке задач" +
+                " чтобы не загромождать интерфейс, вместо этого он в окне задачи");
 
             Console.ReadKey();
         }
