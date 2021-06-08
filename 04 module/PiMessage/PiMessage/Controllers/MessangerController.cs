@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc;
 using PiMessage.Models;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
@@ -52,11 +53,31 @@ namespace PiMessage.Controllers
         }
 
         /// <summary>
+        /// Greet user of the application.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Produces("text/html")]
+        public ActionResult<string> GreetUser()
+        {
+            string str = "";
+            try
+            {
+                str = System.IO.File.ReadAllText("GreetingWindow.html");
+            }
+            catch
+            {
+                str = "Добро пожаловать в PiMessage!";
+            }
+            return str;
+        }
+
+        /// <summary>
         /// Initialize users and messages with random values.
         /// </summary>
         /// <returns></returns>
         [HttpPost("Init")]
-        public IActionResult Post()
+        public IActionResult Init()
         {
             if (!ModelState.IsValid)
             {
